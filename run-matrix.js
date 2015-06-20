@@ -1,20 +1,26 @@
 "use strict";
+
+// Import required modules
 var taskcluster = require('taskcluster-client');
 var exec = require('child_process').exec;
 var slugid = require('slugid');
+
+// Get job info/config
 var jobinfo = require('./job-info');
 
+var taskInspectorURL = 'https://tools.taskcluster.net/task-inspector/'
+
+// Keep track of the # of jobs
+var count = 1;
+
+// Create Queue
 var queue = new taskcluster.Queue({
     timeout: 30*1000,
     credentials: {
-        clientId: process.env.TC_CLIENT_ID,
-        accessToken: process.env.TC_ACCESS_TOKEN,
+        clientId: process.env.TASKCLUSTER_CLIENT_ID,
+        accessToken: process.env.TASKCLUSTER_ACCESS_TOKEN,
     }
 });
-
-
-var count = 0;
-
 
 var generatePayloadAndLaunch = function(matrix, payload) {
     // I might not really need the payload object here...
@@ -26,14 +32,14 @@ var generatePayloadAndLaunch = function(matrix, payload) {
         payload.created = taskcluster.fromNowJSON();
         payload.deadline = taskcluster.fromNowJSON(jobinfo.deadline);
         var taskId = slugid.v4();
-        console.log('TaskId: ' + taskId);
+        console.log('TaskURL: ' + taskInspectorURL + taskId);
         console.log();
         console.log(payload);
         queue.createTask(taskId, payload).then(function(result) {
             //console.log(result);
             console.log(result.status);
         });
-        console.log();
+        console.log('********************************************************************************');
     }
 
     // Get an attribute we handle in this function
