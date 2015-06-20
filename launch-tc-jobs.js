@@ -27,9 +27,12 @@ var generatePayloadAndLaunch = function(matrix, payload) {
         payload.deadline = taskcluster.fromNowJSON(jobinfo.deadline);
         var taskId = slugid.v4();
         console.log('TaskId: ' + taskId);
-        //queue.createTaks(taskId, payload);
-
+        console.log();
         console.log(payload);
+        queue.createTask(taskId, payload).then(function(result) {
+            //console.log(result);
+            console.log(result.status);
+        });
         console.log();
     }
 
