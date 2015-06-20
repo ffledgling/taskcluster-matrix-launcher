@@ -14,35 +14,13 @@ var queue = new taskcluster.Queue({
 
 var count = 0;
 
-var generatePayload = function(matrix, payload) {
-    // I might not really need the payload object here...
-    // Javascript closures are hard
-
-    if(Object.keys(matrix).length === 0) {
-        console.log('Count: ' + count++);
-       // console.log(payload);
-       console.log();
-    }
-
-    var attr = Object.keys(matrix)[0];
-    var values = matrix[attr];
-
-    for (var v in values) {
-        delete matrix[attr];
-        console.log(attr + ": " + v);
-        payload.payload[attr] = v;
-        generatePayload(matrix, payload);
-        matrix[attr]=values;
-    }
-
-    return;
-}
-
-//generatePayload(jobinfo.matrix, jobinfo.payload);
 var getTimestamp = function(offset) {
     // Attempt to use GNU date
-    exec('date -u -d ' + offset + '+%FT%X.%3NZ', function(error, stdout, stderr) {
+    var timestamp = null;
+    console.log('date -u -d ' + offset + ' +%FT%X.%3NZ');
+    exec('date -u -d ' + offset + ' +%FT%X.%3NZ', function(error, stdout, stderr) {
         if(error !== null) {
+            console.log(stderr);
             console.log('Attempting to use non-GNU date');
             exec("date -u +%FT%X.%3NZ", function(error, stdout, stderr) {
                 if(error !==null) {
@@ -61,8 +39,45 @@ var getTimestamp = function(offset) {
     });
 }
 var getCreatedTimestamp = function() {
-    return getTimestamp(0);
+    return getTimestamp('now');
+};
 
 var getDeadlineTimestamp = function() {
     return getTimestamp(jobinfo.deadline);
+};
+
+var generatePayload = function(matrix, payload) {
+    // I might not really need the payload object here...
+    // Javascript closures are hard
+
+    if(Object.keys(matrix).length === 0) {
+        // Finished applying one set from the matrix
+        console.log('Count: ' + count++);
+        payload.created = getCreatedTimestamp();
+        payload.deadline = getDeadlineTimestamp();
+        console.log(payload);
+        console.log();
+    }
+
+    // Get an attribute we handle in this function
+    var attr = Object.keys(matrix)[0];
+
+    // Values for that attr
+    var values = matrix[attr];
+
+    for (var v in values) {
+        delete matrix[attr];
+
+        console.log(attr + ": " + v);
+        payload.payload[attr] = v;
+        generatePayload(matrix, payload);
+
+        // Nasty hack to deal with Javascript object behaviour
+        matrix[attr]=values;
+    }
+
+    return;
 }
+
+console.log(getCreatedTimestamp());
+//generatePayload(jobinfo.matrix, jobinfo.payload);

@@ -24,5 +24,7 @@ module.exports = {
         matrix: {
             "name": ["Test task1", "Test task2"],
             "maxRunTime": [500, 700],
-        }
+        },
+
+        deadline: "+5days",
 }
